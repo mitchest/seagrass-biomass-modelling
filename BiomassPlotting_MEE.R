@@ -80,8 +80,8 @@ dev.off()
 # sample size simulation --------------------------------------------------
 # Fig. 3, Fig. i
 
-# number of simualtion runs
-nBoot = 100
+# number of simualtion/bootstrap runs
+nBoot = 1000
 # lower sample size limit
 sample.min = 10
 # total number of simulated points
@@ -112,20 +112,43 @@ for (sim in 1:nBoot) {                # simulation run
 }
 sample.simulation = data.frame(simN, sample.size, slope, offset, R2, RMSE)
 
+## functions to do summary calculations
+## mean function
+MeanNumeric = function(x){
+  ifelse(is.numeric(x), mean(x), x)
+}
+## 5% quantile function
+quantile.025 = function(x){
+  ifelse(is.numeric(x), quantile(x, 0.025), x)
+}
+## 95% quantile function
+quantile.975 = function(x){
+  ifelse(is.numeric(x), quantile(x, 0.975), x)
+}
+
+# claculate mean and CI's for simulation at each sample size
+sample.simulation.means = ddply(sample.simulation[,-1], .(sample.size), colwise(MeanNumeric))
+sample.simulation.025 = ddply(sample.simulation[,-1], .(sample.size), colwise(quantile.025))
+sample.simulation.975 = ddply(sample.simulation[,-1], .(sample.size), colwise(quantile.975))
+
 # plot it
-size = 0.5
+size = 1
 
-slope = ggplot(data=sample.simulation, aes(x=sample.size, y=slope)) +
-  geom_point(size=size) + theme_classic() + geom_density2d(colour="red")
+slope = ggplot(data=sample.simulation.means, aes(x=sample.size, y=slope)) +
+  geom_errorbar(aes(ymin=sample.simulation.025$slope,ymax=sample.simulation.975$slope), width=.1) +
+  geom_point(size=size) + theme_classic()
 
-offset = ggplot(data=sample.simulation, aes(x=sample.size, y=offset)) +
-  geom_point(size=size) + theme_classic() + geom_density2d(colour="red")
+offset = ggplot(data=sample.simulation.means, aes(x=sample.size, y=offset)) +
+  geom_errorbar(aes(ymin=sample.simulation.025$offset,ymax=sample.simulation.975$offset), width=.1) +
+  geom_point(size=size) + theme_classic()
 
-R2 = ggplot(data=sample.simulation, aes(x=sample.size, y=R2)) +
-  geom_point(size=size) + theme_classic() + geom_density2d(colour="red")
+R2 = ggplot(data=sample.simulation.means, aes(x=sample.size, y=R2)) +
+  geom_errorbar(aes(ymin=sample.simulation.025$R2,ymax=sample.simulation.975$R2), width=.1) +
+  geom_point(size=size) + theme_classic()
 
-RMSE = ggplot(data=sample.simulation, aes(x=sample.size, y=RMSE)) +
-  geom_point(size=size) + theme_classic() + geom_density2d(colour="red")
+RMSE = ggplot(data=sample.simulation.means, aes(x=sample.size, y=RMSE)) +
+  geom_errorbar(aes(ymin=sample.simulation.025$RMSE,ymax=sample.simulation.975$RMSE), width=.1) +
+  geom_point(size=size) + theme_classic()
 
 # combine into single plot
 CairoPDF(file="figure3_R.pdf", width=10, height=10, bg="transparent")
