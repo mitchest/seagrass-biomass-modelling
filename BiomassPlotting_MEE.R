@@ -81,7 +81,7 @@ dev.off()
 # Fig. 3, Fig. i
 
 # number of simualtion/bootstrap runs
-nBoot = 1000
+nBoot = 10000
 # lower sample size limit
 sample.min = 10
 # total number of simulated points
@@ -134,21 +134,36 @@ sample.simulation.975 = ddply(sample.simulation[,-1], .(sample.size), colwise(qu
 # plot it
 size = 1
 
-slope = ggplot(data=sample.simulation.means, aes(x=sample.size, y=slope)) +
-  geom_errorbar(aes(ymin=sample.simulation.025$slope,ymax=sample.simulation.975$slope), width=.1) +
-  geom_point(size=size) + theme_classic()
+slope = ggplot(data=sample.simulation.means, aes(x=sample.size)) +
+  geom_point(aes(y=slope.perm), size=size) +
+  geom_errorbar(aes(ymin=sample.simulation.025$slope.boot,ymax=sample.simulation.975$slope.boot), colour="black", width=0.5) +
+  geom_errorbar(aes(ymin=sample.simulation.025$slope.perm,ymax=sample.simulation.975$slope.perm), colour="red", width=0.5) +
+  theme_classic()
 
-offset = ggplot(data=sample.simulation.means, aes(x=sample.size, y=offset)) +
-  geom_errorbar(aes(ymin=sample.simulation.025$offset,ymax=sample.simulation.975$offset), width=.1) +
-  geom_point(size=size) + theme_classic()
+offset = ggplot(data=sample.simulation.means, aes(x=sample.size)) +
+  geom_point(aes(y=offset.perm), size=size) +
+  geom_errorbar(aes(ymin=sample.simulation.025$offset.boot,ymax=sample.simulation.975$offset.boot), colour="black", width=0.5) +
+  geom_errorbar(aes(ymin=sample.simulation.025$offset.perm,ymax=sample.simulation.975$offset.perm), colour="red", width=0.5) +
+  theme_classic()
 
-R2 = ggplot(data=sample.simulation.means, aes(x=sample.size, y=R2)) +
-  geom_errorbar(aes(ymin=sample.simulation.025$R2,ymax=sample.simulation.975$R2), width=.1) +
-  geom_point(size=size) + theme_classic()
+R2 = ggplot(data=sample.simulation.means, aes(x=sample.size)) +
+  geom_point(aes(y=R2.perm), size=size) +
+  geom_errorbar(aes(ymin=sample.simulation.025$R2.boot,ymax=sample.simulation.975$R2.boot), colour="black", width=0.5) +
+  geom_errorbar(aes(ymin=sample.simulation.025$R2.perm,ymax=sample.simulation.975$R2.perm), colour="red", width=0.5) +
+  theme_classic()
 
-RMSE = ggplot(data=sample.simulation.means, aes(x=sample.size, y=RMSE)) +
-  geom_errorbar(aes(ymin=sample.simulation.025$RMSE,ymax=sample.simulation.975$RMSE), width=.1) +
-  geom_point(size=size) + theme_classic()
+RMSE = ggplot(data=sample.simulation.means, aes(x=sample.size)) +
+  geom_point(aes(y=RMSE.perm), size=size) +
+  geom_errorbar(aes(ymin=sample.simulation.025$RMSE.boot,ymax=sample.simulation.975$RMSE.boot), colour="black", width=0.5) +
+  geom_errorbar(aes(ymin=sample.simulation.025$RMSE.perm,ymax=sample.simulation.975$RMSE.perm), colour="red", width=0.5) +
+  theme_classic()
+
+CV = ggplot(data=sample.simulation.CV, aes(x=sample.size)) +
+  geom_line(aes(y=R2.boot), size=size, colour="red") +
+  geom_line(aes(y=RMSE.boot), size=size, colour="blue") +
+  geom_line(aes(y=R2.perm), size=size, colour="orange") +
+  geom_line(aes(y=RMSE.perm), size=size, colour="green") +
+  theme_classic()
 
 # combine into single plot
 CairoPDF(file="figure3_R.pdf", width=10, height=10, bg="transparent")
