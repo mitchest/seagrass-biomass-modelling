@@ -1,3 +1,6 @@
+## Author: Mitchell Lyons (mitchell.lyons@gmail.com)
+## No licence, though please attribute me and publish any derivitives open source =)
+
 library(Cairo)
 library(ggplot2)
 library(DAAG)
