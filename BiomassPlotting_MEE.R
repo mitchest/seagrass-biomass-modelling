@@ -3,10 +3,10 @@
 
 library(Cairo)
 library(ggplot2)
-library(DAAG)
 library(stringr)
 library(gridExtra)
 library(plyr)
+library(mgcv)
 
 # the plotting in this script requires that "BiomassModelling.R" has already been run
 
@@ -83,7 +83,7 @@ dev.off()
 # sample size simulation --------------------------------------------------
 # Fig. 3, Fig. i
 
-# number of simualtion/bootstrap runs
+# number of simualtion runs
 nBoot = 10000
 # lower sample size limit
 sample.min = 10
@@ -92,28 +92,40 @@ sim.length = (nrow(bio)-(sample.min-1))*nBoot
 # pre-allocate vectors
 simN = numeric(sim.length)
 sample.size = numeric(sim.length)
-slope = numeric(sim.length)
-offset = numeric(sim.length)
-R2 = numeric(sim.length)
-RMSE = numeric(sim.length)
+slope.perm = numeric(sim.length)
+offset.perm = numeric(sim.length)
+R2.perm = numeric(sim.length)
+RMSE.perm = numeric(sim.length)
+slope.boot = numeric(sim.length)
+offset.boot = numeric(sim.length)
+R2.boot = numeric(sim.length)
+RMSE.boot = numeric(sim.length)
 # fill ticker
 pos = 0
 for (sim in 1:nBoot) {                # simulation run
   for (i in sample.min:nrow(bio)){    # sample size, begining at n=sample.min
     pos = pos+1
-    # sample rows according to simulated sample n and fit model
-    rows = sample(nrow(bio), i)
-    fit = summary(lm(log(T_AG_BM) ~ T_SG, data=bio[rows,]))
-    # fill in info
     simN[pos] = sim
     sample.size[pos] = i
-    slope[pos] = fit$coefficients[2]
-    offset[pos] = fit$coefficients[1]
-    R2[pos] = fit$r.squared
-    RMSE[pos] = fit$sigma
+    # sample rows without replacement
+    rows = sample(x=nrow(bio), size=i, replace=F)
+    fit = lm(log(T_AG_BM) ~ T_SG, data=bio[rows,])
+    slope.perm[pos] = coef(fit)[2]
+    offset.perm[pos] = coef(fit)[1]
+    R2.perm[pos] = summary(fit)$r.squared
+    RMSE.perm[pos] = sqrt(mean((((exp(1)^predict.lm(fit))-(exp(1)^fit$model[,1]))^2)))
+    # sample rows with replacement
+    rows = sample(x=nrow(bio), size=i, replace=T)
+    fit = lm(log(T_AG_BM) ~ T_SG, data=bio[rows,])
+    slope.boot[pos] = coef(fit)[2]
+    offset.boot[pos] = coef(fit)[1]
+    R2.boot[pos] = summary(fit)$r.squared
+    RMSE.boot[pos] = sqrt(mean((((exp(1)^predict.lm(fit))-(exp(1)^fit$model[,1]))^2)))
   }
 }
-sample.simulation = data.frame(simN, sample.size, slope, offset, R2, RMSE)
+sample.simulation = data.frame(simN, sample.size, 
+                               slope.perm, offset.perm, R2.perm, RMSE.perm,
+                               slope.boot, offset.boot, R2.boot, RMSE.boot)
 
 ## functions to do summary calculations
 ## mean function
@@ -128,6 +140,7 @@ quantile.025 = function(x){
 quantile.975 = function(x){
   ifelse(is.numeric(x), quantile(x, 0.975), x)
 }
+
 
 # claculate mean and CI's for simulation at each sample size
 sample.simulation.means = ddply(sample.simulation[,-1], .(sample.size), colwise(MeanNumeric))
@@ -161,15 +174,9 @@ RMSE = ggplot(data=sample.simulation.means, aes(x=sample.size)) +
   geom_errorbar(aes(ymin=sample.simulation.025$RMSE.perm,ymax=sample.simulation.975$RMSE.perm), colour="red", width=0.5) +
   theme_classic()
 
-CV = ggplot(data=sample.simulation.CV, aes(x=sample.size)) +
-  geom_line(aes(y=R2.boot), size=size, colour="red") +
-  geom_line(aes(y=RMSE.boot), size=size, colour="blue") +
-  geom_line(aes(y=R2.perm), size=size, colour="orange") +
-  geom_line(aes(y=RMSE.perm), size=size, colour="green") +
-  theme_classic()
 
-# combine into single plot
-CairoPDF(file="figure3_R.pdf", width=10, height=10, bg="transparent")
+#CairoWin()
+CairoPDF(file="../figures/figure3_R.pdf", width=10, height=8, bg="transparent")
 grid.arrange(slope, offset, R2, RMSE, ncol=2)
 dev.off()
 
@@ -277,72 +284,3 @@ ggplot(data=biomass.map.ts, aes(x=factor(map.year), y=map.biomass)) +
   ylab("biomass (tonnes DW)") + xlab("mapping month/year")
 dev.off()
 
-
-# annual WA binned biomass plots ------------------------------------------
-# Fig. 6
-
-# create data frame to store biomass bin value counts
-biomass.bins.labels = c("1-20","21-40","41-60","61-80","81-100","101-120","121-140", "140+")
-biomass.bins.plot = data.frame(bin=character(0), percentage=numeric(0), year=character(0), data.source=character(0))
-
-# apply to photos
-## function to use to calculate the number of photos of a certain biomass bin
-BiomassBinSum = function(data){
-  length(data$biomass.bin)
-}
-
-photo.sets = c("j2004", "a2007", "j2011", "f2012", "j2012", "f2013", "m2013")
-for (i in 1:length(photo.sets)){
-  photo = get(paste0("photos.",photo.sets[i]))
-  totals = ddply(photo, .(biomass.bin), BiomassBinSum)
-  totals = totals[totals$biomass.bin %in% biomass.bins.labels,]
-  totals$V1 = totals$V1/sum(totals$V1)
-  names(totals) = c("bin","percentage")
-  #fill in detail
-  totals$year = rep(photo.sets[i], nrow(totals))
-  totals$data.source = rep("photos", nrow(totals))
-  # stack together
-  biomass.bins.plot = rbind(biomass.bins.plot, totals)
-}
-
-# apply to maps (where photos exsist)
-## function to use to calculate the area sum in a certain biomass bin
-BiomassBinArea = function(data){
-  sum(data$Area, na.rm=T)
-}
-
-map.sets = c("j2004", "a2007", "j2011", "f2012", "j2012", "f2013", "m2013")
-for (i in 1:length(map.sets)){
-  map = get(paste0("map.",map.sets[i]))
-  totals = ddply(map, .(biomass.bin), BiomassBinArea)
-  totals = totals[totals$biomass.bin %in% biomass.bins.labels,]
-  totals$V1 = totals$V1/sum(totals$V1)
-  names(totals) = c("bin","percentage")
-  #fill in detail
-  totals$year = rep(map.sets[i], nrow(totals))
-  totals$data.source = rep("map", nrow(totals))
-  # stack together
-  biomass.bins.plot = rbind(biomass.bins.plot, totals)
-}
-
-# plot the bin data
-biomass.bins.plot$year = as.factor(biomass.bins.plot$year)
-levels(biomass.bins.plot$year) = map.sets
-
-# create correlation plot between photos/map percentages
-biomass.bin.corr = biomass.bins.plot
-biomass.bin.corr$id = paste0(biomass.bin.corr$bin,".",biomass.bin.corr$year)
-biomass.bin.corr = merge(biomass.bin.corr[biomass.bin.corr$data.source=="photos",], 
-                         biomass.bin.corr[biomass.bin.corr$data.source=="map",],
-                         by="id")
-
-# plot it
-CairoPDF(file="figure6_R.pdf", width=7, height=5, bg="transparent")
-size = 3
-ggplot(data=biomass.bin.corr, aes(x=percentage.x, y=percentage.y)) +
-  geom_point(aes(fill=bin.x), size=size, shape=21) + theme_classic() +
-  scale_fill_manual(name="Biomass: gDW/m2",
-                      values=c("#de2d26","#fc9272","#edf8e9","#bae4b3","#74c476","#238b45","#000000")) +
-  xlab("photo predicted % of landscape") + ylab("map predicted % of landscape") +
-  geom_abline(intercept=0,slope=1, colour="red", linetype="twodash")
-dev.off()
