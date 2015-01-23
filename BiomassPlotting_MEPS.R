@@ -13,8 +13,9 @@ library(mgcv)
 # model performance plots -------------------------------------------------
 # Fig. 2
 
-# linear regression models (Fig. 2b)
-lin.fit.val = lm(bio$linModel ~ bio$T_AG_BM)
+## obs vs. predicted plots
+#CairoWin()
+#CairoPNG(filename="strat.fit.val.png", width=600, height=600)
 mixed = ggplot(bio, aes(x=T_AG_BM, y=linModel)) +
   geom_point(shape=19) +
   #geom_text(aes(label=row.names(bio)),hjust=0, vjust=0) +
@@ -29,13 +30,15 @@ mixed = ggplot(bio, aes(x=T_AG_BM, y=linModel)) +
         legend.background = element_rect(fill="transparent")) +
   #add R/rms
   geom_text(data=NULL, x=100, y=25, 
-            label = paste("RMSE =", round(summary(lin.fit.val)$sigma, 1)), hjust=0) +
-  geom_text(data=NULL, x=100, y=15, 
-            label = paste("Pearson's R =", round(cor.test(bio$linModel, bio$T_AG_BM)$estimate, 2)), hjust=0) +
-  geom_text(data=NULL, x=25, y=175, label = "(b)", hjust=0)
+            label = paste("Overall RMSE = ", round(sqrt(mean((bio$linModel-bio$T_AG_BM)^2)), 0)), hjust=0) +
+  geom_text(data=NULL, x=175, y=10, label = "(a)", hjust=0) + 
+  geom_vline(xintercept=c(25,50,75), linetype="dotted")
 
-# stratified model (Fig. 2c)
-strat.fit.val = lm(bio$stratModel ~ bio$T_AG_BM)
+#dev.off()
+
+# stratified model
+#CairoWin()
+#CairoPNG(filename="strat.fit.val.png", width=600, height=600)
 dominant = ggplot(bio, aes(x=T_AG_BM, y=stratModel)) +
   geom_point(shape=19) +
   geom_smooth(method=lm, alpha=0.2) +
@@ -49,13 +52,15 @@ dominant = ggplot(bio, aes(x=T_AG_BM, y=stratModel)) +
         legend.background = element_rect(fill="transparent")) +
   #add R/rms
   geom_text(data=NULL, x=100, y=25, 
-            label = paste("RMSE =", round(summary(strat.fit.val)$sigma, 2)), hjust=0) +
-  geom_text(data=NULL, x=100, y=15, 
-            label = paste("Pearson's R =", round(cor.test(bio$stratModel, bio$T_AG_BM)$estimate, 2)), hjust=0) +
-  geom_text(data=NULL, x=25, y=175, label = "(c)", hjust=0)
+            label = paste("Overall RMSE =", round(sqrt(mean((bio$stratModel-bio$T_AG_BM)^2)), 0)), hjust=0) +
+  geom_text(data=NULL, x=175, y=10, label = "(c)", hjust=0) + 
+  geom_vline(xintercept=c(25,50,75), linetype="dotted")
+#dev.off()
 
-# summation model (Fig. 2a)
-sum.fit.val = lm(bio$sumModel ~ bio$T_AG_BM)
+
+# summation model
+#CairoWin()
+#CairoPNG(filename="sum.fit.val.png", width=600, height=600)
 component = ggplot(bio, aes(x=T_AG_BM, y=sumModel)) +
   geom_point(shape=19) +
   stat_smooth(method=lm, alpha=0.2) +
@@ -69,14 +74,15 @@ component = ggplot(bio, aes(x=T_AG_BM, y=sumModel)) +
         legend.background = element_rect(fill="transparent")) +
   #add R/rms
   geom_text(data=NULL, x=100, y=25, 
-            label = paste("RMSE =", round(summary(sum.fit.val)$sigma, 1)), hjust=0) +
-  geom_text(data=NULL, x=100, y=15, 
-            label = paste("Pearson's R =", round(cor.test(bio$sumModel, bio$T_AG_BM)$estimate, 2)), hjust=0) +
-  geom_text(data=NULL, x=25, y=175, label = "(a)", hjust=0)
+            label = paste("Overall RMSE =", round(sqrt(mean((bio$sumModel-bio$T_AG_BM)^2)), 0)), hjust=0) +
+  geom_text(data=NULL, x=175, y=10, label = "(b)", hjust=0) + 
+  geom_vline(xintercept=c(25,50,75), linetype="dotted")
+#dev.off()
 
-# combine in single single plot
-CairoPDF(file="figure2_R.pdf", width=15, height=5, bg="transparent")
-grid.arrange(component, mixed, dominant, nrow=1)
+# in a single plot window
+CairoPDF(file="../figures/figure2_R.pdf", width=15, height=5, bg="transparent")
+#CairoWin()
+grid.arrange(mixed, component, dominant, nrow=1)
 dev.off()
 
 
