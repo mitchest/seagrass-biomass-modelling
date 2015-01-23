@@ -9,7 +9,7 @@ http://doi.pangaea.de/10.1594/PANGAEA.833767
 ### Running code ###
 
 * All code and files should be cloned/downloaded to a single path
-* Both scripts can then be run in full
+* All scripts can then be run in full
 
 ### Contribution guidelines ###
 
