@@ -25,7 +25,7 @@ cv.lm = function(model.fit, K) {
   pred.rmse = numeric(K)
   # randomly shuffle data and create fold index
   data = data[sample(nrow(data)),]
-  folds = cut(seq(1,nrow(data)),breaks=10,labels=FALSE)
+  folds = cut(seq(1,nrow(data)),breaks=K,labels=FALSE)
   # split data and calculate desired stats
   for (i in 1:K) {
     # make test/model data
@@ -56,7 +56,7 @@ cv.lm.log = function(model.fit, K) {
   pred.rmse = numeric(K)
   # randomly shuffle data and create fold index
   data = data[sample(nrow(data)),]
-  folds = cut(seq(1,nrow(data)),breaks=10,labels=FALSE)
+  folds = cut(seq(1,nrow(data)),breaks=K,labels=FALSE)
   # split data and calculate desired stats
   for (i in 1:K) {
     # make test/model data
@@ -84,7 +84,7 @@ cv.glm = function(model.fit, K) {
   pred.rmse = numeric(K)
   # randomly shuffle data and create fold index
   data = data[sample(nrow(data)),]
-  folds = cut(seq(1,nrow(data)),breaks=10,labels=FALSE)
+  folds = cut(seq(1,nrow(data)),breaks=K,labels=FALSE)
   # split data and calculate desired stats
   for (i in 1:K) {
     # make test/model data
@@ -110,7 +110,7 @@ cv.gam = function(model.fit, K) {
   pred.rmse = numeric(K)
   # randomly shuffle data and create fold index
   data = data[sample(nrow(data)),]
-  folds = cut(seq(1,nrow(data)),breaks=10,labels=FALSE)
+  folds = cut(seq(1,nrow(data)),breaks=K,labels=FALSE)
   # split data and calculate desired stats
   for (i in 1:K) {
     # make test/model data
@@ -210,11 +210,11 @@ PrintGAM = function(model.fit, K) {
 
 ## function that calculates bootstrapped mean and 95% CI's for CV prediciton rmse for a given LM
 boot.lm = function(model.fit, K, nBoot) {
-  pred.rmse = numeric(10*nBoot)
+  pred.rmse = numeric(K*nBoot)
   pos = 1
   for (i in 1:nBoot) {
-    pred.rmse[pos:(pos+9)] = cv.lm(model.fit,K)$pred.rmse
-    pos = pos+10
+    pred.rmse[pos:(pos+(K-1))] = cv.lm(model.fit,K)$pred.rmse
+    pos = pos+K
   }
   print(paste0("mean prediction RMSE: ",mean(pred.rmse)))
   plot = plot(sort(pred.rmse),
@@ -227,11 +227,11 @@ boot.lm = function(model.fit, K, nBoot) {
 
 ## function that calculates bootstrapped mean and 95% CI's for CV prediciton rmse for a given LM
 boot.lm.log = function(model.fit, K, nBoot) {
-  pred.rmse = numeric(10*nBoot)
+  pred.rmse = numeric(K*nBoot)
   pos = 1
   for (i in 1:nBoot) {
-    pred.rmse[pos:(pos+9)] = cv.lm.log(model.fit,K)$pred.rmse
-    pos = pos+10
+    pred.rmse[pos:(pos+(K-1))] = cv.lm.log(model.fit,K)$pred.rmse
+    pos = pos+K
   }
   print(paste0("mean prediction RMSE: ",mean(pred.rmse)))
   plot = plot(sort(pred.rmse),
@@ -244,11 +244,11 @@ boot.lm.log = function(model.fit, K, nBoot) {
 
 ## function that calculates bootstrapped mean and 95% CI's for CV prediciton rmse for a given GLM
 boot.glm = function(model.fit, K, nBoot) {
-  pred.rmse = numeric(10*nBoot)
+  pred.rmse = numeric(K*nBoot)
   pos = 1
   for (i in 1:nBoot) {
-    pred.rmse[pos:(pos+9)] = cv.glm(model.fit,K)$pred.rmse
-    pos = pos+10
+    pred.rmse[pos:(pos+(K-1))] = cv.glm(model.fit,K)$pred.rmse
+    pos = pos+K
   }
   print(paste0("mean prediction RMSE: ",mean(pred.rmse)))
   plot = plot(sort(pred.rmse),
@@ -261,11 +261,11 @@ boot.glm = function(model.fit, K, nBoot) {
 
 ## function that calculates bootstrapped mean and 95% CI's for CV prediciton rmse for a given GAM
 boot.gam = function(model.fit, K, nBoot) {
-  pred.rmse = numeric(10*nBoot)
+  pred.rmse = numeric(K*nBoot)
   pos = 1
   for (i in 1:nBoot) {
-    pred.rmse[pos:(pos+9)] = cv.gam(model.fit,K)$pred.rmse
-    pos = pos+10
+    pred.rmse[pos:(pos+(K-1))] = cv.gam(model.fit,K)$pred.rmse
+    pos = pos+K
   }
   print(paste0("mean prediction RMSE: ",mean(pred.rmse)))
   plot = plot(sort(pred.rmse),
