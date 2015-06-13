@@ -2,6 +2,7 @@
 
 This repo provides all code and data to reproduce the results and figures from:  
 Lyons et al. (2015) "Rapid monitoring of seagrass biomass using a simple linear modelling approach, in the field and from space". Marine Ecology Progress Series.
+dx.doi.org/10.3354/meps11321  
 
 The full set of seagrass map data in shapefile format is available on PANGAEA at:  
 http://doi.pangaea.de/10.1594/PANGAEA.833767
